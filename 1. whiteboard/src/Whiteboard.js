@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useReactMediaRecorder } from "react-media-recorder-2";
 import { DrawIoEmbed } from "react-drawio";
+import "./App.css";
 
 function Whiteboard() {
   const [webcamStream, setWebcamStream] = useState(null);
@@ -105,14 +106,15 @@ function Whiteboard() {
       </div>
 
       {/* Whiteboard Container */}
-      <div style={{ flex: 1, width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
+      <div style={{ flex: 1, width: "200vh", height: "100%", overflow: "hidden", position: "relative",marginLeft:"5vh" }}>
         <DrawIoEmbed
           urlParameters={{
             ui: "sketch",
             spin: true,
             libraries: true,
+            grid: 1,
           }}
-          style={{ width: "100%", height: "100%", border: "none" }}
+          style={{ width: "100%", height: "100%", border: "none", transform: "scale(1)", transformOrigin: "0 0" }}
         />
 
         {/* Webcam Feed */}
@@ -122,20 +124,19 @@ function Whiteboard() {
               position: "absolute",
               bottom: "20px",
               right: "20px",
-              width: "300px",
-              height: "200px",
+              width: "600px", // Fixed width
+              height: "400px", // Fixed height
               borderRadius: "8px",
               overflow: "hidden",
               boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
               zIndex: 1000,
-              marginRight: "35vh"
             }}
           >
             <video
               ref={webcamVideoRef}
               autoPlay
               muted
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scale(1)", transformOrigin: "0 0" }}
             />
           </div>
         )}
