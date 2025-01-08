@@ -2,18 +2,19 @@ import whisper
 from pydub import AudioSegment
 from pydub.utils import make_chunks
 from googletrans import Translator
-import os
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
+import os
+from pathlib import Path
 
-def convert_mp4_to_mp3(mp4_path, mp3_path):
+def convert_webm_to_mp3(webm_path, mp3_path):
     """
-    Convert an MP4 file to MP3 format.
+    Convert a WEBM file to MP3 format.
     """
-    print(f"Converting {mp4_path} to {mp3_path}...")
-    audio = AudioSegment.from_file(mp4_path, format="mp4")
+    print(f"Converting {webm_path} to {mp3_path}...")
+    audio = AudioSegment.from_file(webm_path, format="webm")
     audio.export(mp3_path, format="mp3")
     print("Conversion complete.")
 
@@ -22,7 +23,7 @@ def transcribe_long_audio(file_path, chunk_length_seconds=30):
     Transcribe long audio files by splitting them into smaller chunks.
     """
     # Load the Whisper model
-    model = whisper.load_model("base")  # Use "base", "small", "medium", or "large"
+    model = whisper.load_model("base")
 
     # Load the audio file
     audio = AudioSegment.from_file(file_path)
@@ -63,32 +64,88 @@ def translate_transcript(transcript, languages):
     """
     translator = Translator()
     translations = {}
-    for lang_code in languages:
-        print(f"Translating into {languages[lang_code]}...")
-        translation = translator.translate(transcript, dest=lang_code).text
-        translations[lang_code] = translation
+    for language in languages:
+        print(f"Translating into {language}...")
+        translation = translator.translate(transcript, dest=language).text
+        translations[language] = translation
     return translations
 
-def txt_to_pdf(input_txt_file, output_pdf_file, font_file, font_size=14):
+def save_to_file(filename, content):
     """
-    Convert a .txt file to a .pdf file with custom font support.
+    Save the given content to a text file.
     """
-    try:
+    with open(filename, "w", encoding="utf-8") as file:
+        file.write(content)
+    print(f"Saved to {filename}")
+
+def txt_to_pdf(input_common_name, languages):
+    """
+    Convert text files into PDFs using appropriate fonts for each language, including English.
+    """
+    fonts_folder = "fonts"
+
+    # Language to font mapping
+    language_fonts = {
+        'english': "NotoSans-Regular.ttf",
+        'hindi': "NotoSansDevanagari-Regular.ttf",
+        'marathi': "NotoSansDevanagari-Regular.ttf",
+        'gujarati': "NotoSansGujarati-Regular.ttf",
+        'bengali': "NotoSansBengali-Regular.ttf",
+        'telugu': "NotoSansTelugu-Regular.ttf",
+        'tamil': "NotoSansTamil-Regular.ttf",
+        'urdu': "NotoSansArabic-Regular.ttf",
+        'kannada': "NotoSansKannada-Regular.ttf",
+        'malayalam': "NotoSansMalayalam-Regular.ttf",
+        'punjabi': "NotoSansGurmukhi-Regular.ttf",
+        'spanish': "NotoSans-Regular.ttf",
+        'french': "NotoSans-Regular.ttf",
+        'german': "NotoSans-Regular.ttf",
+        'italian': "NotoSans-Regular.ttf",
+        'japanese': "NotoSansJP-Regular.ttf",
+        'chinese (simplified)': "NotoSansSC-Regular.ttf",
+        'arabic': "NotoSansArabic-Regular.ttf"
+    }
+
+    # Add English to the language processing list
+    languages['en'] = 'English'
+
+    for lang_code, lang_name in languages.items():
+        txt_file_name = f"{input_common_name}-{lang_name.lower()}.txt"
+
+        if not os.path.exists(txt_file_name):
+            print(f"Skipping: {txt_file_name} not found.")
+            continue
+
+        font_file = language_fonts.get(lang_name.lower(), None)
+        if not font_file:
+            print(f"Skipping: No font defined for {lang_name}.")
+            continue
+
+        font_path = os.path.join(fonts_folder, font_file)
+        if not os.path.exists(font_path):
+            print(f"Skipping: Font file {font_file} not found in 'fonts' folder.")
+            continue
+
         # Register the custom font
-        pdfmetrics.registerFont(TTFont("CustomFont", font_file))
+        font_name = f"CustomFont_{lang_name}"
+        pdfmetrics.registerFont(TTFont(font_name, font_path))
+
+        # Output PDF file path
+        output_pdf_file = f"{input_common_name}-{lang_name.lower()}.pdf"
 
         # A4 page dimensions and margins
         page_width, page_height = A4
-        margin = 50  # 50 points margin (~0.7 inches)
+        margin = 50
         usable_width = page_width - 2 * margin
-        line_spacing = font_size + 4  # Spacing between lines
+        font_size = 14
+        line_spacing = font_size + 4
 
         # Initialize PDF canvas
         pdf = canvas.Canvas(output_pdf_file, pagesize=A4)
-        pdf.setFont("CustomFont", font_size)
+        pdf.setFont(font_name, font_size)
 
         # Read the input text
-        with open(input_txt_file, "r", encoding="utf-8") as txt_file:
+        with open(txt_file_name, "r", encoding="utf-8") as txt_file:
             lines = txt_file.readlines()
 
         # Start writing text
@@ -96,99 +153,90 @@ def txt_to_pdf(input_txt_file, output_pdf_file, font_file, font_size=14):
         y_position = page_height - margin
 
         for line in lines:
-            line = line.strip()  # Clean up unnecessary whitespace
+            line = line.strip()
             if not line:
-                continue  # Skip empty lines
+                continue
 
-            # Split long lines to fit within the usable width
             while len(line) > 0:
-                # Find the maximum number of characters that fit in the usable width
                 for i in range(len(line), 0, -1):
-                    if pdf.stringWidth(line[:i], "CustomFont", font_size) <= usable_width:
+                    if pdf.stringWidth(line[:i], font_name, font_size) <= usable_width:
                         break
-                
-                # Draw the part of the line that fits
-                pdf.drawString(x_start, y_position, line[:i].strip())
-                line = line[i:].strip()  # Remove the written part
 
-                # Move to the next line
+                pdf.drawString(x_start, y_position, line[:i].strip())
+                line = line[i:].strip()
+
                 y_position -= line_spacing
 
-                # Add a new page if the current page is full
                 if y_position < margin:
                     pdf.showPage()
-                    pdf.setFont("CustomFont", font_size)
+                    pdf.setFont(font_name, font_size)
                     y_position = page_height - margin
 
-        # Save the PDF
         pdf.save()
         print(f"PDF created successfully: {output_pdf_file}")
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
+def create_output_folder(input_file):
+    """
+    Create a folder to store all outputs based on the input file name.
+    """
+    base_folder = Path(input_file).stem  # Extract the file name without extension
+    output_folder = Path(base_folder)
+    output_folder.mkdir(exist_ok=True)  # Create the folder if it doesn't exist
+    return output_folder
 
-# Main function to run
 if __name__ == "__main__":
-    input_file = "small-eng.mp4"  # Replace with your MP4 file path
+    input_file = "fgg.webm"  # Replace with your WEBM file path
     base_filename = os.path.splitext(os.path.basename(input_file))[0]
-    output_dir = os.path.join(os.getcwd(), base_filename)
-    os.makedirs(output_dir, exist_ok=True)
+    
+    # Step 0: Create output folder
+    output_folder = create_output_folder(input_file)
 
-    mp3_file = os.path.join(output_dir, "converted_audio.mp3")
+    # Define paths for intermediate and output files
+    mp3_file = output_folder / "converted_audio.mp3"
+    eng_file = output_folder / f"{base_filename}-english.txt"
 
-    # Step 1: Convert MP4 to MP3
-    convert_mp4_to_mp3(input_file, mp3_file)
+    # Step 1: Convert WEBM to MP3
+    convert_webm_to_mp3(input_file, mp3_file)
 
     # Step 2: Transcribe the MP3 file
     transcript = transcribe_long_audio(mp3_file, chunk_length_seconds=30)
 
     # Step 3: Save the English transcript
-    eng_file = os.path.join(output_dir, f"{base_filename}-eng.txt")
-    with open(eng_file, "w", encoding="utf-8") as file:
-        file.write(transcript)
+    save_to_file(eng_file, transcript)
 
     # Step 4: Translate the transcript into multiple languages
     languages = {
-        'gu': 'Gujarati',
-        'bn': 'Bengali',
-        'te': 'Telugu',
-        'ta': 'Tamil',
-        'ur': 'Urdu',
-        'kn': 'Kannada',
-        'ml': 'Malayalam',
-        'pa': 'Punjabi',
-        'ar': 'Arabic',
-        'zh-cn': 'Chinese (Simplified)',
-        'ja': 'Japanese'
+        "hi": "Hindi",
+        "mr": "Marathi",
+        "gu": "Gujarati",
+        "bn": "Bengali",
+        "te": "Telugu",
+        "ta": "Tamil",
+        "ur": "Urdu",
+        "kn": "Kannada",
+        "ml": "Malayalam",
+        "pa": "Punjabi",
+        "es": "Spanish",
+        "fr": "French",
+        "de": "German",
+        "it": "Italian",
+        "ja": "Japanese",
+        "zh-cn": "Chinese (Simplified)",
+        "ar": "Arabic",
     }
-
-    # Map fonts for specific languages
-    font_map = {
-        'gu': "NotoSansGujarati-Regular.ttf",
-        'bn': "NotoSansBengali-Regular.ttf",
-        'te': "NotoSansTelugu-Regular.ttf",
-        'ta': "NotoSansTamil-Regular.ttf",
-        'ur': "NotoSansArabic-Regular.ttf",
-        'kn': "NotoSansKannada-Regular.ttf",
-        'ml': "NotoSansMalayalam-Regular.ttf",
-        'pa': "NotoSansGurmukhi-Regular.ttf",
-        'ja': "NotoSansJP-Regular.ttf",
-        'zh-cn': "NotoSansSC-Regular.ttf",
-        'ar': "NotoSansArabic-Regular.ttf"
-    }
-
-    translations = translate_transcript(transcript, languages)
+    translations = translate_transcript(transcript, languages.keys())
 
     # Step 5: Save translations
     for lang_code, translation in translations.items():
         lang_name = languages[lang_code].lower()
-        translation_file = os.path.join(output_dir, f"{base_filename}-{lang_name}.txt")
-        pdf_file = os.path.join(output_dir, f"{base_filename}-{lang_name}.pdf")
-        with open(translation_file, "w", encoding="utf-8") as file:
-            file.write(translation)
-        font_path = font_map.get(lang_code, "NotoSans-Regular.ttf")  # Default font
-        txt_to_pdf(translation_file, pdf_file, font_path)
-    
-    # Step 6: Clean up the converted MP3 file
-    if os.path.exists(mp3_file):
-        os.remove(mp3_file)
+        translation_file = output_folder / f"{base_filename}-{lang_name}.txt"
+        save_to_file(translation_file, translation)
+
+    # Step 6: Generate PDFs
+    txt_to_pdf(output_folder / base_filename, languages)
+
+    # Step 7: Clean up the converted MP3 file
+    if mp3_file.exists():
+        mp3_file.unlink()
+
+    print(f"All outputs saved in folder: {output_folder}")

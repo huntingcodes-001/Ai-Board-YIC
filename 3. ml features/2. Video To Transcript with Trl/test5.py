@@ -9,12 +9,12 @@ from reportlab.pdfbase import pdfmetrics
 import os
 from pathlib import Path
 
-def convert_mp4_to_mp3(mp4_path, mp3_path):
+def convert_webm_to_mp3(webm_path, mp3_path):
     """
-    Convert an MP4 file to MP3 format.
+    Convert a WEBM file to MP3 format.
     """
-    print(f"Converting {mp4_path} to {mp3_path}...")
-    audio = AudioSegment.from_file(mp4_path, format="mp4")
+    print(f"Converting {webm_path} to {mp3_path}...")
+    audio = AudioSegment.from_file(webm_path, format="webm")
     audio.export(mp3_path, format="mp3")
     print("Conversion complete.")
 
@@ -80,12 +80,13 @@ def save_to_file(filename, content):
 
 def txt_to_pdf(input_common_name, languages):
     """
-    Convert text files into PDFs using appropriate fonts for each language.
+    Convert text files into PDFs using appropriate fonts for each language, including English.
     """
     fonts_folder = "fonts"
 
     # Language to font mapping
     language_fonts = {
+        'english': "NotoSans-Regular.ttf",
         'hindi': "NotoSansDevanagari-Regular.ttf",
         'marathi': "NotoSansDevanagari-Regular.ttf",
         'gujarati': "NotoSansGujarati-Regular.ttf",
@@ -104,6 +105,9 @@ def txt_to_pdf(input_common_name, languages):
         'chinese (simplified)': "NotoSansSC-Regular.ttf",
         'arabic': "NotoSansArabic-Regular.ttf"
     }
+
+    # Add English to the language processing list
+    languages['en'] = 'English'
 
     for lang_code, lang_name in languages.items():
         txt_file_name = f"{input_common_name}-{lang_name.lower()}.txt"
@@ -171,17 +175,17 @@ def txt_to_pdf(input_common_name, languages):
         pdf.save()
         print(f"PDF created successfully: {output_pdf_file}")
 
-def create_output_folder(mp4_path):
+def create_output_folder(input_file):
     """
-    Create a folder to store all outputs based on the input MP4 file name.
+    Create a folder to store all outputs based on the input file name.
     """
-    base_folder = Path(mp4_path).stem  # Extract the file name without extension
+    base_folder = Path(input_file).stem  # Extract the file name without extension
     output_folder = Path(base_folder)
     output_folder.mkdir(exist_ok=True)  # Create the folder if it doesn't exist
     return output_folder
 
 if __name__ == "__main__":
-    input_file = "small-eng.mp4"  # Replace with your MP4 file path
+    input_file = "fgg.webm"  # Replace with your WEBM file path
     base_filename = os.path.splitext(os.path.basename(input_file))[0]
     
     # Step 0: Create output folder
@@ -189,10 +193,10 @@ if __name__ == "__main__":
 
     # Define paths for intermediate and output files
     mp3_file = output_folder / "converted_audio.mp3"
-    eng_file = output_folder / f"{base_filename}-eng.txt"
+    eng_file = output_folder / f"{base_filename}-english.txt"
 
-    # Step 1: Convert MP4 to MP3
-    convert_mp4_to_mp3(input_file, mp3_file)
+    # Step 1: Convert WEBM to MP3
+    convert_webm_to_mp3(input_file, mp3_file)
 
     # Step 2: Transcribe the MP3 file
     transcript = transcribe_long_audio(mp3_file, chunk_length_seconds=30)
