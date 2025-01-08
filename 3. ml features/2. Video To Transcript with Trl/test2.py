@@ -102,7 +102,7 @@ def save_to_pdf(filename, content, font_name, font_path, rtl=False):
 
 # Main function to run
 if __name__ == "__main__":
-    input_file = "gg.webm"  # Replace with your WEBM file path
+    input_file = "ggdd.webm"  # Replace with your WEBM file path
     base_filename = os.path.splitext(os.path.basename(input_file))[0]
     output_dir = os.path.join(os.getcwd(), base_filename)
     os.makedirs(output_dir, exist_ok=True)
