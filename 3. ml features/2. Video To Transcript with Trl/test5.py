@@ -88,6 +88,20 @@ def txt_to_pdf(input_common_name, languages):
         'hindi': "NotoSansDevanagari-Regular.ttf",
         'marathi': "NotoSansDevanagari-Regular.ttf",
         'gujarati': "NotoSansGujarati-Regular.ttf",
+        'bengali': "NotoSansBengali-Regular.ttf",
+        'telugu': "NotoSansTelugu-Regular.ttf",
+        'tamil': "NotoSansTamil-Regular.ttf",
+        'urdu': "NotoSansArabic-Regular.ttf",
+        'kannada': "NotoSansKannada-Regular.ttf",
+        'malayalam': "NotoSansMalayalam-Regular.ttf",
+        'punjabi': "NotoSansGurmukhi-Regular.ttf",
+        'spanish': "NotoSans-Regular.ttf",
+        'french': "NotoSans-Regular.ttf",
+        'german': "NotoSans-Regular.ttf",
+        'italian': "NotoSans-Regular.ttf",
+        'japanese': "NotoSansJP-Regular.ttf",
+        'chinese (simplified)': "NotoSansSC-Regular.ttf",
+        'arabic': "NotoSansArabic-Regular.ttf"
         # Add more language mappings as needed
     }
 
@@ -173,7 +187,25 @@ if __name__ == "__main__":
     save_to_file(eng_file, transcript)
 
     # Step 4: Translate the transcript into Hindi, Marathi, and Gujarati
-    languages = {"hi": "Hindi", "mr": "Marathi", "gu": "Gujarati"}
+    languages = {
+        "hi": "Hindi",
+        "mr": "Marathi",
+        "gu": "Gujarati",
+        "bn": "Bengali",
+        "te": "Telugu",
+        "ta": "Tamil",
+        "ur": "Urdu",
+        "kn": "Kannada",
+        "ml": "Malayalam",
+        "pa": "Punjabi",
+        "es": "Spanish",
+        "fr": "French",
+        "de": "German",
+        "it": "Italian",
+        "ja": "Japanese",
+        "zh-cn": "Chinese (Simplified)",
+        "ar": "Arabic",
+    }
     translations = translate_transcript(transcript, languages.keys())
 
     # Step 5: Save translations
