@@ -7,6 +7,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 import os
+from pathlib import Path
 
 def convert_mp4_to_mp3(mp4_path, mp3_path):
     """
@@ -102,7 +103,6 @@ def txt_to_pdf(input_common_name, languages):
         'japanese': "NotoSansJP-Regular.ttf",
         'chinese (simplified)': "NotoSansSC-Regular.ttf",
         'arabic': "NotoSansArabic-Regular.ttf"
-        # Add more language mappings as needed
     }
 
     for lang_code, lang_name in languages.items():
@@ -171,10 +171,25 @@ def txt_to_pdf(input_common_name, languages):
         pdf.save()
         print(f"PDF created successfully: {output_pdf_file}")
 
+def create_output_folder(mp4_path):
+    """
+    Create a folder to store all outputs based on the input MP4 file name.
+    """
+    base_folder = Path(mp4_path).stem  # Extract the file name without extension
+    output_folder = Path(base_folder)
+    output_folder.mkdir(exist_ok=True)  # Create the folder if it doesn't exist
+    return output_folder
+
 if __name__ == "__main__":
     input_file = "small-eng.mp4"  # Replace with your MP4 file path
     base_filename = os.path.splitext(os.path.basename(input_file))[0]
-    mp3_file = "converted_audio.mp3"
+    
+    # Step 0: Create output folder
+    output_folder = create_output_folder(input_file)
+
+    # Define paths for intermediate and output files
+    mp3_file = output_folder / "converted_audio.mp3"
+    eng_file = output_folder / f"{base_filename}-eng.txt"
 
     # Step 1: Convert MP4 to MP3
     convert_mp4_to_mp3(input_file, mp3_file)
@@ -183,10 +198,9 @@ if __name__ == "__main__":
     transcript = transcribe_long_audio(mp3_file, chunk_length_seconds=30)
 
     # Step 3: Save the English transcript
-    eng_file = f"{base_filename}-eng.txt"
     save_to_file(eng_file, transcript)
 
-    # Step 4: Translate the transcript into Hindi, Marathi, and Gujarati
+    # Step 4: Translate the transcript into multiple languages
     languages = {
         "hi": "Hindi",
         "mr": "Marathi",
@@ -211,12 +225,14 @@ if __name__ == "__main__":
     # Step 5: Save translations
     for lang_code, translation in translations.items():
         lang_name = languages[lang_code].lower()
-        translation_file = f"{base_filename}-{lang_name}.txt"
+        translation_file = output_folder / f"{base_filename}-{lang_name}.txt"
         save_to_file(translation_file, translation)
 
     # Step 6: Generate PDFs
-    txt_to_pdf(base_filename, languages)
+    txt_to_pdf(output_folder / base_filename, languages)
 
     # Step 7: Clean up the converted MP3 file
-    if os.path.exists(mp3_file):
-        os.remove(mp3_file)
+    if mp3_file.exists():
+        mp3_file.unlink()
+
+    print(f"All outputs saved in folder: {output_folder}")
