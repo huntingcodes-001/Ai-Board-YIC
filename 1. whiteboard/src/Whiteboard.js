@@ -1,22 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useReactMediaRecorder } from "react-media-recorder-2";
 import { DrawIoEmbed } from "react-drawio";
 
 function Whiteboard() {
   const [webcamStream, setWebcamStream] = useState(null);
-  const [isRecording, setIsRecording] = useState(false); // Track recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedChunks, setRecordedChunks] = useState([]);
   const webcamVideoRef = useRef(null);
-
-  const {
-    status,
-    startRecording: startScreenRecording,
-    stopRecording,
-    mediaBlobUrl,
-  } = useReactMediaRecorder({
-    screen: true,
-    audio: true,
-    video: true,
-  });
+  const mediaRecorderRef = useRef(null);
+  const combinedStreamRef = useRef(null);
 
   // Start webcam stream automatically when the component mounts
   useEffect(() => {
@@ -43,64 +34,99 @@ function Whiteboard() {
       if (webcamStream) {
         webcamStream.getTracks().forEach((track) => track.stop());
       }
+      if (combinedStreamRef.current) {
+        combinedStreamRef.current.getTracks().forEach((track) => track.stop());
+      }
     };
   }, []);
 
-  // Handle download locally
-  const handleDownload = async () => {
+  // Start recording
+  const startRecording = async () => {
     try {
-      // Stop the recording
-      stopRecording();
+      // Get screen and webcam streams
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true,
+      });
+      const webcamStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
 
-      // Wait for the mediaBlobUrl to be available
-      if (!mediaBlobUrl) {
-        console.error("No recording available to download.");
-        return;
-      }
+      // Combine screen and webcam streams
+      const combinedStream = new MediaStream([
+        ...screenStream.getVideoTracks(),
+        ...webcamStream.getAudioTracks(),
+        ...webcamStream.getVideoTracks(),
+      ]);
 
-      // Fetch the recorded blob
-      const response = await fetch(mediaBlobUrl);
-      const blob = await response.blob();
+      combinedStreamRef.current = combinedStream;
 
-      // Create a download link for the recording
-      const timestamp = new Date().toLocaleString().replace(/[^\w\s]/gi, '');
-      const filename = `recording_${timestamp}.webm`; // Use .webm for better compatibility
+      // Create a MediaRecorder instance
+      const mediaRecorder = new MediaRecorder(combinedStream, {
+        mimeType: "video/webm; codecs=vp9",
+      });
 
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          setRecordedChunks((prev) => [...prev, event.data]);
+        }
+      };
 
-      console.log("Recording downloaded successfully");
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: "video/webm" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `recording_${new Date().toISOString()}.webm`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        // Reset recorded chunks
+        setRecordedChunks([]);
+      };
+
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+      setIsRecording(true);
     } catch (error) {
-      console.error("Error handling download: ", error);
+      console.error("Error starting recording:", error);
     }
   };
 
-  // Start recording
-  const startRecording = () => {
-    startScreenRecording();
-    setIsRecording(true);
-  };
-
-  // Stop recording and download
-  const stopRecordingAndDownload = () => {
-    stopRecording();
-    setIsRecording(false);
-    handleDownload();
+  // Stop recording
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+      setIsRecording(false);
+    }
+    if (combinedStreamRef.current) {
+      combinedStreamRef.current.getTracks().forEach((track) => track.stop());
+      combinedStreamRef.current = null;
+    }
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       {/* Button Bar */}
       <div style={{ display: "flex", justifyContent: "center", padding: "10px", backgroundColor: "#f0f0f0" }}>
-        <button className="button" onClick={startRecording} style={{ marginRight: "10px" }}>
+        <button
+          className="button"
+          onClick={startRecording}
+          disabled={isRecording}
+          style={{ marginRight: "10px" }}
+        >
           Start Recording
         </button>
-        <button className="button" onClick={stopRecordingAndDownload}>
-          Stop Screen Recording
+        <button
+          className="button"
+          onClick={stopRecording}
+          disabled={!isRecording}
+        >
+          Stop Recording
         </button>
       </div>
 
@@ -128,7 +154,7 @@ function Whiteboard() {
               overflow: "hidden",
               boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
               zIndex: 1000,
-              marginRight: "35vh"
+              marginRight: "35vh",
             }}
           >
             <video
