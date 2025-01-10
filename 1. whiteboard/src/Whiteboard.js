@@ -1,13 +1,23 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useReactMediaRecorder } from "react-media-recorder-2";
 import { DrawIoEmbed } from "react-drawio";
+import "./App.css";
 
 function Whiteboard() {
   const [webcamStream, setWebcamStream] = useState(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordedChunks, setRecordedChunks] = useState([]);
+  const [isRecording, setIsRecording] = useState(false); // Track recording state
   const webcamVideoRef = useRef(null);
-  const mediaRecorderRef = useRef(null);
-  const combinedStreamRef = useRef(null);
+
+  const {
+    status,
+    startRecording: startScreenRecording,
+    stopRecording,
+    mediaBlobUrl,
+  } = useReactMediaRecorder({
+    screen: true,
+    audio: true,
+    video: true,
+  });
 
   // Start webcam stream automatically when the component mounts
   useEffect(() => {
@@ -34,111 +44,77 @@ function Whiteboard() {
       if (webcamStream) {
         webcamStream.getTracks().forEach((track) => track.stop());
       }
-      if (combinedStreamRef.current) {
-        combinedStreamRef.current.getTracks().forEach((track) => track.stop());
-      }
     };
   }, []);
 
-  // Start recording
-  const startRecording = async () => {
+  // Handle download locally
+  const handleDownload = async () => {
     try {
-      // Get screen and webcam streams
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: true,
-      });
-      const webcamStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
+      // Stop the recording
+      stopRecording();
 
-      // Combine screen and webcam streams
-      const combinedStream = new MediaStream([
-        ...screenStream.getVideoTracks(),
-        ...webcamStream.getAudioTracks(),
-        ...webcamStream.getVideoTracks(),
-      ]);
+      // Wait for the mediaBlobUrl to be available
+      if (!mediaBlobUrl) {
+        console.error("No recording available to download.");
+        return;
+      }
 
-      combinedStreamRef.current = combinedStream;
+      // Fetch the recorded blob
+      const response = await fetch(mediaBlobUrl);
+      const blob = await response.blob();
 
-      // Create a MediaRecorder instance
-      const mediaRecorder = new MediaRecorder(combinedStream, {
-        mimeType: "video/webm; codecs=vp9",
-      });
+      // Create a download link for the recording
+      const timestamp = new Date().toLocaleString().replace(/[^\w\s]/gi, '');
+      const filename = `recording_${timestamp}.webm`; // Use .webm for better compatibility
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          setRecordedChunks((prev) => [...prev, event.data]);
-        }
-      };
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: "video/webm" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `recording_${new Date().toISOString()}.webm`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        // Reset recorded chunks
-        setRecordedChunks([]);
-      };
-
-      mediaRecorder.start();
-      mediaRecorderRef.current = mediaRecorder;
-      setIsRecording(true);
+      console.log("Recording downloaded successfully");
     } catch (error) {
-      console.error("Error starting recording:", error);
+      console.error("Error handling download: ", error);
     }
   };
 
-  // Stop recording
-  const stopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current = null;
-      setIsRecording(false);
-    }
-    if (combinedStreamRef.current) {
-      combinedStreamRef.current.getTracks().forEach((track) => track.stop());
-      combinedStreamRef.current = null;
-    }
+  // Start recording
+  const startRecording = () => {
+    startScreenRecording();
+    setIsRecording(true);
+  };
+
+  // Stop recording and download
+  const stopRecordingAndDownload = () => {
+    stopRecording();
+    setIsRecording(false);
+    handleDownload();
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       {/* Button Bar */}
       <div style={{ display: "flex", justifyContent: "center", padding: "10px", backgroundColor: "#f0f0f0" }}>
-        <button
-          className="button"
-          onClick={startRecording}
-          disabled={isRecording}
-          style={{ marginRight: "10px" }}
-        >
+        <button className="button" onClick={startRecording} style={{ marginRight: "10px" }}>
           Start Recording
         </button>
-        <button
-          className="button"
-          onClick={stopRecording}
-          disabled={!isRecording}
-        >
-          Stop Recording
+        <button className="button" onClick={stopRecordingAndDownload}>
+          Stop Screen Recording
         </button>
       </div>
 
       {/* Whiteboard Container */}
-      <div style={{ flex: 1, width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
+      <div style={{ flex: 1, width: "200vh", height: "100%", overflow: "hidden", position: "relative",marginLeft:"5vh" }}>
         <DrawIoEmbed
           urlParameters={{
             ui: "sketch",
             spin: true,
             libraries: true,
+            grid: 1,
           }}
-          style={{ width: "100%", height: "100%", border: "none" }}
+          style={{ width: "100%", height: "100%", border: "none", transform: "scale(1)", transformOrigin: "0 0" }}
         />
 
         {/* Webcam Feed */}
@@ -148,20 +124,19 @@ function Whiteboard() {
               position: "absolute",
               bottom: "20px",
               right: "20px",
-              width: "300px",
-              height: "200px",
+              width: "600px", // Fixed width
+              height: "400px", // Fixed height
               borderRadius: "8px",
               overflow: "hidden",
               boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
               zIndex: 1000,
-              marginRight: "35vh",
             }}
           >
             <video
               ref={webcamVideoRef}
               autoPlay
               muted
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scale(1)", transformOrigin: "0 0" }}
             />
           </div>
         )}
