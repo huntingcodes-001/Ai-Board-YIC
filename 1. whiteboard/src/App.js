@@ -18,14 +18,12 @@ function App() {
     <Routes>
       <Route path="/" element={<Whiteboard/>}/>
       <Route path="/adminlogin" element={<AdminLogin/>}/>
-<<<<<<< HEAD
       {/* <Route path="/studentlogin" element={<StudentLogin/>}/> */}
       <Route path="/test" element={<RecordView/>}/>
-=======
       <Route path="/studentlogin" element={<StudentLogin/>}/>
       <Route path="/studentreg" element={<StudentRegister/>}/>
       {/* <Route path="/resources" element={<Resources/>}/> */}
->>>>>>> 580ca26a83b5d21331620632d613a6b0c770bd89
+
       <Route path="/qna" element={<QNAScript/>}/>
       <Route path="/process" element={<Process/>}/>
       <Route path="/summarize" element={<Summary/>}/>

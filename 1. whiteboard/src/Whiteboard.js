@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useReactMediaRecorder } from "react-media-recorder-2";
 import { DrawIoEmbed } from "react-drawio";
+import Swal from "sweetalert2"; // Import SweetAlert2
 import "./App.css";
 
 function Whiteboard() {
@@ -63,20 +64,46 @@ function Whiteboard() {
       const response = await fetch(mediaBlobUrl);
       const blob = await response.blob();
 
-      // Create a download link for the recording
-      const timestamp = new Date().toLocaleString().replace(/[^\w\s]/gi, '');
-      const filename = `recording_${timestamp}.webm`; // Use .webm for better compatibility
+      // Create a FormData object and append the blob
+      const formData = new FormData();
+      const timestamp = new Date().toLocaleString().replace(/[^\w\s]/gi, "");
+      const filename = `lec1_${timestamp}.webm`;
+      formData.append("recording", blob, filename);
 
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Send the file to the server
+      const uploadResponse = await fetch("http://localhost:8000/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-      console.log("Recording downloaded successfully");
+      if (uploadResponse.ok) {
+        console.log("Recording uploaded successfully");
+        // Show success alert
+        Swal.fire({
+          icon: "success",
+          title: "Recording Saved!",
+          text: "Your recording has been successfully saved.",
+          confirmButtonText: "OK",
+        });
+      } else {
+        console.error("Error uploading recording");
+        // Show error alert
+        Swal.fire({
+          icon: "error",
+          title: "Upload Failed",
+          text: "There was an error uploading your recording.",
+          confirmButtonText: "OK",
+        });
+      }
     } catch (error) {
       console.error("Error handling download: ", error);
+      // Show error alert
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "An error occurred while processing your recording.",
+        confirmButtonText: "OK",
+      });
     }
   };
 
@@ -106,7 +133,7 @@ function Whiteboard() {
       </div>
 
       {/* Whiteboard Container */}
-      <div style={{ flex: 1, width: "200vh", height: "100%", overflow: "hidden", position: "relative",marginLeft:"5vh" }}>
+      <div style={{ flex: 1, width: "200vh", height: "100%", overflow: "hidden", position: "relative", marginLeft: "5vh" }}>
         <DrawIoEmbed
           urlParameters={{
             ui: "sketch",
