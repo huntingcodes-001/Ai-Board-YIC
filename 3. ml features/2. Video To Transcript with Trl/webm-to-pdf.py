@@ -185,7 +185,7 @@ def create_output_folder(input_file):
     return output_folder
 
 if __name__ == "__main__":
-    input_file = "fgg.webm"  # Replace with your WEBM file path
+    input_file = "input/fgg.webm"  # Replace with your WEBM file path
     base_filename = os.path.splitext(os.path.basename(input_file))[0]
     
     # Step 0: Create output folder
