@@ -123,7 +123,7 @@ const stopRecordingAndDownload = () => {
 // Generate Resources and stuff from the ML script
 const generateResources = async () => {
   try {
-      const response = await fetch('http://localhost:3050/run-python', { method: 'POST' });
+      const response = await fetch('http://localhost:8000/run-python', { method: 'POST' });
       if (response.ok) {
           const result = await response.json();
           // Alert on success
