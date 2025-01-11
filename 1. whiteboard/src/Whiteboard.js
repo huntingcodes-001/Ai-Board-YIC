@@ -107,29 +107,51 @@ function Whiteboard() {
     }
   };
 
-  // Start recording
-  const startRecording = () => {
-    startScreenRecording();
-    setIsRecording(true);
-  };
+// Start recording   
+const startRecording = () => {
+  startScreenRecording();
+  setIsRecording(true);
+};
 
-  // Stop recording and download
-  const stopRecordingAndDownload = () => {
-    stopRecording();
-    setIsRecording(false);
-    handleDownload();
-  };
+// Stop recording and download
+const stopRecordingAndDownload = () => {
+  stopRecording();
+  setIsRecording(false);
+  handleDownload();
+};
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
+// Generate Resources and stuff from the ML script
+const generateResources = async () => {
+  try {
+      const response = await fetch('http://localhost:3050/run-python', { method: 'POST' });
+      if (response.ok) {
+          const result = await response.json();
+          // Alert on success
+          alert(`Python script executed successfully: ${result.message}`);
+      } else {
+          // Alert on failure
+          alert('Failed to execute Python script');
+      }
+  } catch (error) {
+      console.error('Error executing script:', error);
+      alert('Error executing Python script');
+  }
+};
+
+return (
+  <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       {/* Button Bar */}
       <div style={{ display: "flex", justifyContent: "center", padding: "10px", backgroundColor: "#f0f0f0" }}>
-        <button className="button" onClick={startRecording} style={{ marginRight: "10px" }}>
-          Start Recording
-        </button>
-        <button className="button" onClick={stopRecordingAndDownload}>
-          Stop Screen Recording
-        </button>
+
+          <button className="button" onClick={startRecording} style={{ marginRight: "5px" }}>
+              Start Recording
+          </button>
+          <button className="button" onClick={stopRecordingAndDownload}>
+              Stop Screen Recording
+          </button>
+          <button className="button" onClick={generateResources}>
+              Generate Resources 
+          </button>
       </div>
 
       {/* Whiteboard Container */}
