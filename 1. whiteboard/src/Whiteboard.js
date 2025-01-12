@@ -64,10 +64,19 @@ function Whiteboard() {
       const response = await fetch(mediaBlobUrl);
       const blob = await response.blob();
 
+      // Get the lecture number from localStorage
+      const lectureCountKey = "lectureCount";
+      let lectureCount = parseInt(localStorage.getItem(lectureCountKey)) || 0;
+
+      // Increment the lecture number
+      lectureCount += 1;
+      localStorage.setItem(lectureCountKey, lectureCount);
+
+      // Generate the filename
+      const filename = `Lec ${lectureCount}.webm`;
+
       // Create a FormData object and append the blob
       const formData = new FormData();
-      const timestamp = new Date().toLocaleString().replace(/[^\w\s]/gi, "");
-      const filename = `lec1_${timestamp}.webm`;
       formData.append("recording", blob, filename);
 
       // Send the file to the server
@@ -82,7 +91,7 @@ function Whiteboard() {
         Swal.fire({
           icon: "success",
           title: "Recording Saved!",
-          text: "Your recording has been successfully saved.",
+          text: `Your recording has been saved as ${filename}.`,
           confirmButtonText: "OK",
         });
       } else {
@@ -107,55 +116,83 @@ function Whiteboard() {
     }
   };
 
-// Start recording   
-const startRecording = () => {
-  startScreenRecording();
-  setIsRecording(true);
-};
+  // Start recording
+  const startRecording = () => {
+    startScreenRecording();
+    setIsRecording(true);
+  };
 
-// Stop recording and download
-const stopRecordingAndDownload = () => {
-  stopRecording();
-  setIsRecording(false);
-  handleDownload();
-};
+  // Stop recording and download
+  const stopRecordingAndDownload = () => {
+    stopRecording();
+    setIsRecording(false);
+    handleDownload();
+  };
 
-// Generate Resources and stuff from the ML script
-const generateResources = async () => {
-  try {
-      const response = await fetch('http://localhost:8000/run-python', { method: 'POST' });
+  // Generate Resources and stuff from the ML script
+  const generateResources = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/run-python", {
+        method: "POST",
+      });
       if (response.ok) {
-          const result = await response.json();
-          // Alert on success
-          alert(`Python script executed successfully: ${result.message}`);
+        const result = await response.json();
+        // Alert on success
+        alert(`Python script executed successfully: ${result.message}`);
       } else {
-          // Alert on failure
-          alert('Failed to execute Python script');
+        // Alert on failure
+        alert("Failed to execute Python script");
       }
-  } catch (error) {
-      console.error('Error executing script:', error);
-      alert('Error executing Python script');
-  }
-};
+    } catch (error) {
+      console.error("Error executing script:", error);
+      alert("Error executing Python script");
+    }
+  };
 
-return (
-  <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        overflow: "hidden",
+      }}
+    >
       {/* Button Bar */}
-      <div style={{ display: "flex", justifyContent: "center", padding: "10px", backgroundColor: "#f0f0f0" }}>
-
-          <button className="button" onClick={startRecording} style={{ marginRight: "5px" }}>
-              Start Recording
-          </button>
-          <button className="button" onClick={stopRecordingAndDownload}>
-              Stop Screen Recording
-          </button>
-          <button className="button" onClick={generateResources}>
-              Generate Resources 
-          </button>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          padding: "10px",
+          backgroundColor: "#f0f0f0",
+        }}
+      >
+        <button
+          className="button"
+          onClick={startRecording}
+          style={{ marginRight: "5px" }}
+        >
+          Start Recording
+        </button>
+        <button className="button" onClick={stopRecordingAndDownload}>
+          Stop Screen Recording
+        </button>
+        <button className="button" onClick={generateResources}>
+          Generate Resources
+        </button>
       </div>
 
       {/* Whiteboard Container */}
-      <div style={{ flex: 1, width: "200vh", height: "100%", overflow: "hidden", position: "relative", marginLeft: "5vh" }}>
+      <div
+        style={{
+          flex: 1,
+          width: "200vh",
+          height: "100%",
+          overflow: "hidden",
+          position: "relative",
+          marginLeft: "5vh",
+        }}
+      >
         <DrawIoEmbed
           urlParameters={{
             ui: "sketch",
@@ -163,7 +200,13 @@ return (
             libraries: true,
             grid: 1,
           }}
-          style={{ width: "100%", height: "100%", border: "none", transform: "scale(1)", transformOrigin: "0 0" }}
+          style={{
+            width: "100%",
+            height: "100%",
+            border: "none",
+            transform: "scale(1)",
+            transformOrigin: "0 0",
+          }}
         />
 
         {/* Webcam Feed */}
@@ -185,7 +228,13 @@ return (
               ref={webcamVideoRef}
               autoPlay
               muted
-              style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scale(1)", transformOrigin: "0 0" }}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                transform: "scale(1)",
+                transformOrigin: "0 0",
+              }}
             />
           </div>
         )}
