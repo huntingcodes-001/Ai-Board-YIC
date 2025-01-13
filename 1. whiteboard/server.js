@@ -37,8 +37,8 @@ app.post('/upload', upload.single('recording'), (req, res) => {
 
 // Endpoint to execute Python script
 app.post('/run-python', (req, res) => {
-    const scriptPath = "C:\\Users\\amirz\\Desktop\\1. Ai Board - YIC\\1. whiteboard\\src\\test_script.py";  // Update with the correct script path
-    const pythonExecutable = "C:\\Python312\\python.exe"; // Replace with the full path to Python executable
+    const scriptPath = "C:\\Users\\CoE\\Desktop\\Final Smartboard\\Ai-Board-YIC\\1. whiteboard\\src\\test_script.py";  // Update with the correct script path
+    const pythonExecutable = "C:\\Users\\CoE\\AppData\\Local\\Programs\\Python\\Python311\\python.exe"; // Replace with the full path to Python executable
 
     // console.log(`Running Python script: ${scriptPath} using ${pythonExecutable}`);
 
