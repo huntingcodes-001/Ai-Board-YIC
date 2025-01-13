@@ -166,7 +166,6 @@ def txt_to_pdf(input_common_name, languages):
                 line = line[i:].strip()
 
                 y_position -= line_spacing
-
                 if y_position < margin:
                     pdf.showPage()
                     pdf.setFont(font_name, font_size)
