@@ -131,21 +131,66 @@ function Whiteboard() {
 
   // Generate Resources and stuff from the ML script
   const generateResources = async () => {
+    // Initialize SweetAlert2 with a loading state
+    let swalInstance = Swal.fire({
+      title: "Generating Resources...",
+      html: "Initializing...", // Initial message
+      allowOutsideClick: false, // Prevent closing by clicking outside
+      didOpen: () => {
+        Swal.showLoading(); // Show loading spinner
+      },
+    });
+  
     try {
       const response = await fetch("http://localhost:8000/run-python", {
         method: "POST",
       });
-      if (response.ok) {
-        const result = await response.json();
-        // Alert on success
-        alert(`Python script executed successfully: ${result.message}`);
-      } else {
-        // Alert on failure
-        alert("Failed to execute Python script");
+  
+      if (!response.ok) {
+        throw new Error("Failed to execute Python script");
       }
+  
+      // Use a stream or event source to get real-time updates
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+  
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+  
+        // Decode the chunk of data
+        const chunk = decoder.decode(value);
+        console.log("Received chunk:", chunk);
+  
+        // Update the SweetAlert2 modal with the new content
+        swalInstance.update({
+          html: chunk, // Update the content with the latest chunk
+        });
+      }
+  
+      // Final success message
+      swalInstance.update({
+        icon: "success",
+        title: "Success!",
+        html: "Resources generated successfully.",
+        showConfirmButton: true,
+      });
+  
+      // Hide the loading spinner
+      Swal.hideLoading();
     } catch (error) {
       console.error("Error executing script:", error);
-      alert("Error executing Python script");
+  
+      // Show error message
+      swalInstance.update({
+        icon: "error",
+        title: "Error",
+        html: "An error occurred while generating resources.",
+        showConfirmButton: true,
+      });
+  
+      // Hide the loading spinner in case of error
+      Swal.hideLoading();
     }
   };
 

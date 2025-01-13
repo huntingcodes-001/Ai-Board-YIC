@@ -10,8 +10,8 @@ import os
 from pathlib import Path
 
 # Directories
-input_dir = "C:\\Users\\amirz\\Desktop\\1. Ai Board - YIC\\3. ml features\\2. Video To Transcript with Trl\\recordings"  # Directory containing input files
-output_dir = "C:\\Users\\amirz\\Desktop\\1. Ai Board - YIC\\3. ml features\\2. Video To Transcript with Trl\\outputs"  # Directory to check/create output folders
+input_dir = r"C:\Users\CoE\Desktop\Final Smartboard\Ai-Board-YIC\1. whiteboard\src\recordings"  # Directory containing input files
+output_dir = r"C:\Users\CoE\Desktop\Final Smartboard\Ai-Board-YIC\2. classroom\public\data\smartrec"  # Directory to check/create output folders
 
 def convert_webm_to_mp3(webm_path, mp3_path):
     """
@@ -78,7 +78,7 @@ def txt_to_pdf(input_common_name, languages):
     """
     Convert text files into PDFs using appropriate fonts for each language, including English.
     """
-    fonts_folder = "fonts"
+    fonts_folder = r"C:\Users\CoE\Desktop\Final Smartboard\Ai-Board-YIC\3. ml features\2. Video To Transcript with Trl\fonts"
 
     language_fonts = {
         'english': "NotoSans-Regular.ttf",
@@ -173,7 +173,7 @@ def create_output_folder(input_file, output_dir):
 
 if __name__ == "__main__":
     # Set the path to your Google Cloud API key file
-    # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"C:\\Users\\amirz\\Downloads\\amir-translate.json"  # <-- Update this path
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"C:\Users\CoE\Desktop\Final Smartboard\Ai-Board-YIC\3. ml features\2. Video To Transcript with Trl\amir-translate.json"  # <-- Update this path
 
     # Process each file in the input directory
     for file_name in os.listdir(input_dir):
