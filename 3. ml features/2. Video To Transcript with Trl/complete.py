@@ -16,7 +16,7 @@ output_dir = "C:\\Users\\amirz\\Desktop\\1. Ai Board - YIC\\3. ml features\\2. V
 
 def convert_webm_to_mp3(webm_path, mp3_path):
     """
-    Convert a WEBM file to MP3 format.
+    Convert a WEBM file to MP3 format
     """
     print(f"Converting {webm_path} to {mp3_path}...")
     audio = AudioSegment.from_file(webm_path, format="webm")
